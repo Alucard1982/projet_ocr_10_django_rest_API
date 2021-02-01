@@ -4,11 +4,10 @@ from api.models import Project, Issue, Comments
 
 
 class UserSerializer(serializers.ModelSerializer):
-    # projects = ProjectSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email')
+        fields = ('id', 'username', 'email', 'password')
 
 
 class CommentsSerializer(serializers.ModelSerializer):
