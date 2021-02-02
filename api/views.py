@@ -1,9 +1,13 @@
-from rest_framework import generics
-
 from django.contrib.auth.models import User
+from rest_framework.decorators import api_view
+
 from api.models import Project, Issue, Comments
 
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import generics
+
 from api.permissions import IsAuthor, IsContributor
 
 from .serializers import UserSerializer, ProjectSerializer, IssueSerializer, CommentsSerializer
@@ -39,13 +43,23 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Project.objects.filter(contributor=user)
 
 
-class ContributorListCreateView(generics.ListCreateAPIView):
+class ContributorListView(generics.ListAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self, *args, **kwargs):
         id_project = self.kwargs.get('id_project')
         return User.objects.filter(project__id=id_project)
+
+
+class AddContributor(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def post(self, *args, **kwargs, ):
+        id_project = self.kwargs.get('id_project')
+        project = Project.objects.get(pk=id_project)
+        return Response(project.contributor.add(self.request.user))
 
 
 class ContributorDetailView(generics.RetrieveDestroyAPIView):
