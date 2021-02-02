@@ -9,7 +9,7 @@ from api.permissions import IsAuthor, IsContributor
 from .serializers import UserSerializer, ProjectSerializer, IssueSerializer, CommentsSerializer
 
 
-class UserProfileListCreateView(generics.ListCreateAPIView):
+class UserProfileListCreateView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
