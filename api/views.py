@@ -33,6 +33,9 @@ class ProjectListCreateView(generics.ListCreateAPIView):
         user = self.request.user
         return Project.objects.filter(contributor=user)
 
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ProjectSerializer
@@ -80,6 +83,11 @@ class IssueListCreateView(generics.ListCreateAPIView):
         id_project = self.kwargs.get('id_project')
         return Issue.objects.filter(project__contributor=user).filter(project__id=id_project)
 
+    def perform_create(self, serializer, *args, **kwargs):
+        id_project = self.kwargs.get('id_project')
+        projects = Project.objects.get(pk=id_project)
+        serializer.save(author=self.request.user, project=projects)
+
 
 class IssueDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = IssueSerializer
@@ -98,6 +106,9 @@ class CommentsListCreateView(generics.ListCreateAPIView):
         id_project = self.kwargs.get('id_project')
         user = self.request.user
         return Comments.objects.filter(issue__project__contributor=user).filter(issue__project__id=id_project)
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
 
 class CommentsDetailView(generics.RetrieveUpdateDestroyAPIView):

@@ -7,7 +7,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password')
+        fields = ('id', 'username', 'email')
 
 
 class CommentsSerializer(serializers.ModelSerializer):
@@ -15,13 +15,13 @@ class CommentsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comments
-        fields = ('id', 'description', 'author', 'created_time')
+        fields = ('id', 'description', 'author', 'created_time', 'issue')
 
 
 class IssueSerializer(serializers.ModelSerializer):
     comments = CommentsSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
-    user_assigner = UserSerializer(read_only=True)
+    user_assigner = UserSerializer
 
     class Meta:
         model = Issue
@@ -31,7 +31,7 @@ class IssueSerializer(serializers.ModelSerializer):
 class ProjectSerializer(serializers.ModelSerializer):
     issues = IssueSerializer(many=True, read_only=True)
     comments = CommentsSerializer(many=True, read_only=True)
-    contributor = UserSerializer(many=True, read_only=True)
+    contributor = UserSerializer(many=True)
     author = UserSerializer(read_only=True)
 
     class Meta:
