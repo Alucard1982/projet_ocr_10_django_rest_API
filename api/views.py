@@ -1,7 +1,6 @@
-from django.contrib.auth.models import User
 from django.http import Http404
-from django.shortcuts import get_object_or_404
 
+from django.contrib.auth.models import User
 from api.models import Project, Issue, Comments
 
 from rest_framework.permissions import IsAuthenticated
@@ -15,6 +14,8 @@ from .serializers import UserSerializer, ProjectSerializer, IssueSerializer, Com
 
 
 class UserProfileListCreateView(generics.ListAPIView):
+    """permet de recuperer les users"""
+
     try:
         queryset = User.objects.all()
     except User.DoesNotExist:
@@ -23,40 +24,57 @@ class UserProfileListCreateView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
 
-class UserProfileDetailView(generics.RetrieveDestroyAPIView):
+class UserProfileDetailView(generics.RetrieveAPIView):
+    """ permet de récuperer un user en fonction de l'id """
+
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsContributor]
     try:
         queryset = User.objects.all()
     except User.DoesNotExist:
         raise Http404
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated, IsContributor]
 
 
 class ProjectListCreateView(generics.ListCreateAPIView):
+    """récupere tout les projects dans lequel on est contributeur, permet de créer un projet"""
+
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self, *args, **kwargs):
+        """override le queryset"""
+
         try:
             return Project.objects.filter(contributor=self.request.user)
         except Project.DoesNotExist:
             raise Http404
 
     def perform_create(self, serializer):
+        """override le save de l'objet en bdd"""
+
         serializer.save(author=self.request.user)
 
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """get,update,delete un projets en fonction de l'id.Il n'y a que l'auteur du projet qui peut y accéder"""
+
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthor, IsAuthenticated]
-    queryset = Project.objects.all()
+    try:
+        queryset = Project.objects.all()
+    except Project.DoesNotExist:
+        raise Http404
 
 
 class ProjectRetrieveDetailView(generics.RetrieveAPIView):
+    """get un projets en fonction de l'id.Tout les contributeurs du projet peuvent y accéder"""
+
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self, *args, **kwargs):
+        """override le queryset"""
+
         try:
             return Project.objects.filter(contributor=self.request.user)
         except Project.DoesNotExist:
@@ -64,10 +82,14 @@ class ProjectRetrieveDetailView(generics.RetrieveAPIView):
 
 
 class ContributorListView(generics.ListAPIView):
+    """get les  contributeurs d'un  projets """
+
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self, *args, **kwargs):
+        """override le queryset"""
+
         id_project = self.kwargs.get('id_project')
         try:
             return User.objects.filter(project__id=id_project)
@@ -76,6 +98,8 @@ class ContributorListView(generics.ListAPIView):
 
 
 class AddContributor(APIView):
+    """ permet de s'ajouter en tant que contributeur à un project qui existe"""
+
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
@@ -89,22 +113,30 @@ class AddContributor(APIView):
 
 
 class ContributorDetailView(generics.RetrieveDestroyAPIView):
+    """ Permet de se récuperer ou de se supprimer.Aucun autre utilisateur ne peut le faire"""
+
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsContributor]
 
     def get_queryset(self, *args, **kwargs):
+        """override le queryset"""
+
         id_project = self.kwargs.get('id_project')
         try:
-            return User.objects.filter(project__id=id_project).filter(project__contributor=self.request.user)
+            return User.objects.filter(project__id=id_project)
         except User.DoesNotExist:
             raise Http404
 
 
 class IssueListCreateView(generics.ListCreateAPIView):
+    """get, create les issues du projet. Il y a que les contributeurs du projet qui y on accés """
+
     serializer_class = IssueSerializer
     permission_classes = [IsAuthenticated, IsIssue]
 
     def get_queryset(self, *args, **kwargs):
+        """override le queryset"""
+
         user = self.request.user
         id_project = self.kwargs.get('id_project')
         try:
@@ -113,6 +145,8 @@ class IssueListCreateView(generics.ListCreateAPIView):
             raise Http404
 
     def perform_create(self, serializer, *args, **kwargs):
+        """override le save de l'objet en bdd"""
+
         id_project = self.kwargs.get('id_project')
         try:
             projects = Project.objects.get(pk=id_project)
@@ -122,10 +156,14 @@ class IssueListCreateView(generics.ListCreateAPIView):
 
 
 class IssueDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """get, update, delete l'issue.Il y a que l'auteur de l'issue qui  y a accés"""
+
     serializer_class = IssueSerializer
     permission_classes = [IsAuthor, IsAuthenticated]
 
     def get_queryset(self, *args, **kwargs):
+        """override le queryset"""
+
         user = self.request.user
         id_project = self.kwargs.get('id_project')
         try:
@@ -135,10 +173,14 @@ class IssueDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class IssueRetrieveDetailView(generics.RetrieveAPIView):
+    """get, les issues du projets.Tou les contributeurs du projet y on accés"""
+
     serializer_class = IssueSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self, *args, **kwargs):
+        """override le queryset"""
+
         user = self.request.user
         id_project = self.kwargs.get('id_project')
         try:
@@ -148,10 +190,14 @@ class IssueRetrieveDetailView(generics.RetrieveAPIView):
 
 
 class CommentsListCreateView(generics.ListCreateAPIView):
+    """get, create un commentaire.Seul les contributeurs du projets y on accés"""
+
     serializer_class = CommentsSerializer
     permission_classes = [IsAuthenticated, IsComments]
 
     def get_queryset(self, *args, **kwargs):
+        """override le queryset"""
+
         id_project = self.kwargs.get('id_project')
         id_issue = self.kwargs.get('pk')
         user = self.request.user
@@ -162,6 +208,8 @@ class CommentsListCreateView(generics.ListCreateAPIView):
             raise Http404
 
     def perform_create(self, serializer, *args, **kwargs):
+        """override le save de l'objet en bdd"""
+
         id_issue = self.kwargs.get('pk')
         try:
             issues = Issue.objects.get(pk=id_issue)
@@ -171,6 +219,8 @@ class CommentsListCreateView(generics.ListCreateAPIView):
 
 
 class CommentsDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """get, delete, update le commentaire en fonction de l'id.Il ny a que l'auteur qui y a accés"""
+
     serializer_class = CommentsSerializer
     permission_classes = [IsAuthenticated, IsAuthor]
     try:
@@ -190,10 +240,13 @@ class CommentsDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CommentsGetDetailView(generics.RetrieveAPIView):
+    """get le commentaire en fonction de l'id.Tout les contributeurs du projet y on accés"""
     serializer_class = CommentsSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self, *args, **kwargs):
+        """override le queryset"""
+
         try:
             return Comments.objects.filter(issue__project__contributor=self.request.user)
         except Comments.DoesNotExist:

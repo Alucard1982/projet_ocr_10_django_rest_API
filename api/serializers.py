@@ -5,12 +5,16 @@ from api.models import Project, Issue, Comments
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """permet de serializer ou de déserializer le user en fonction du verbe de la requete"""
+
     class Meta:
         model = User
         fields = ('id', 'username', 'email')
 
 
 class CommentsSerializer(serializers.ModelSerializer):
+    """permet de serializer ou de déserializer le commentaire en fonction du verbe de la requete"""
+
     author = UserSerializer(read_only=True)
 
     class Meta:
@@ -19,6 +23,8 @@ class CommentsSerializer(serializers.ModelSerializer):
 
 
 class IssueSerializer(serializers.ModelSerializer):
+    """permet de serializer ou de déserializer l'issue' en fonction du verbe de la requete"""
+
     comments = CommentsSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
     user_assigner = UserSerializer(read_only=True)
@@ -29,6 +35,8 @@ class IssueSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
+    """permet de serializer ou de déserializer le projet en fonction du verbe de la requete"""
+
     issues = IssueSerializer(many=True, read_only=True)
     comments = CommentsSerializer(many=True, read_only=True)
     contributor = UserSerializer
