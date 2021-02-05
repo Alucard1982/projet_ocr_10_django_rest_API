@@ -37,9 +37,8 @@ class ProjectListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self, *args, **kwargs):
-        user = self.request.user
         try:
-            return Project.objects.filter(contributor=user)
+            return Project.objects.filter(contributor=self.request.user)
         except Project.DoesNotExist:
             raise Http404
 
@@ -51,6 +50,17 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthor, IsAuthenticated]
     queryset = Project.objects.all()
+
+
+class ProjectRetrieveDetailView(generics.RetrieveAPIView):
+    serializer_class = ProjectSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self, *args, **kwargs):
+        try:
+            return Project.objects.filter(contributor=self.request.user)
+        except Project.DoesNotExist:
+            raise Http404
 
 
 class ContributorListView(generics.ListAPIView):
@@ -116,9 +126,23 @@ class IssueDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthor, IsAuthenticated]
 
     def get_queryset(self, *args, **kwargs):
+        user = self.request.user
         id_project = self.kwargs.get('id_project')
         try:
-            return Issue.objects.filter(project__id=id_project)
+            return Issue.objects.filter(project__contributor=user).filter(project__id=id_project)
+        except Issue.DoesNotExist:
+            raise Http404
+
+
+class IssueRetrieveDetailView(generics.RetrieveAPIView):
+    serializer_class = IssueSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self, *args, **kwargs):
+        user = self.request.user
+        id_project = self.kwargs.get('id_project')
+        try:
+            return Issue.objects.filter(project__contributor=user).filter(project__id=id_project)
         except Issue.DoesNotExist:
             raise Http404
 
@@ -164,3 +188,13 @@ class CommentsDetailView(generics.RetrieveUpdateDestroyAPIView):
         self.check_object_permissions(self.request, obj)
         return obj"""
 
+
+class CommentsGetDetailView(generics.RetrieveAPIView):
+    serializer_class = CommentsSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self, *args, **kwargs):
+        try:
+            return Comments.objects.filter(issue__project__contributor=self.request.user)
+        except Comments.DoesNotExist:
+            raise Http404

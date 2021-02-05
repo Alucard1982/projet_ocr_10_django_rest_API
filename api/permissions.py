@@ -35,3 +35,6 @@ class IsComments(permissions.BasePermission):
         issues = Issue.objects.filter(project__contributor=request.user).filter(
             project__id=id_project).filter(pk=id_issue)
         return issues
+
+class IsProjectContributor(permissions.BasePermission):
+       pass
