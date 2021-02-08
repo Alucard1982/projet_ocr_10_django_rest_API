@@ -48,6 +48,12 @@ class ProjectSerializer(serializers.ModelSerializer):
         User.objects.create(project=project, **profile_data)
         return project"""
 
+    """def create(self, validated_data):
+        project_data = validated_data.pop('contributor')
+        project = Project.objects.create(**validated_data)
+        validated_data['project'] = project
+        return super().create(self, validated_data)"""
+
     class Meta:
         model = Project
         fields = ('id', 'title', 'description', 'type', 'author', 'contributor', 'issues', 'comments')

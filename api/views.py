@@ -1,7 +1,8 @@
 from django.http import Http404
+from django.db import transaction
 
 from django.contrib.auth.models import User
-from api.models import Project, Issue, Comments
+from api.models import Project, Issue, Comments, Contributeur
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -36,14 +37,13 @@ class UserProfileDetailView(generics.RetrieveAPIView):
 
 
 class ProjectListCreateView(generics.ListCreateAPIView):
-    """récupere tout les projects dans lequel on est contributeur, permet de créer un projet"""
+    """récupere tout les projets dans lequel on est contributeur, permet de créer un projet"""
 
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self, *args, **kwargs):
         """override le queryset"""
-
         try:
             return Project.objects.filter(contributor=self.request.user)
         except Project.DoesNotExist:
@@ -52,7 +52,11 @@ class ProjectListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         """override le save de l'objet en bdd"""
 
-        serializer.save(author=self.request.user)
+        with transaction.atomic():
+            serializer.save(author=self.request.user)
+            # project = Project.objects.get(author=self.request.user)
+            #contributeur= Contributeur.objects.create(user_id=self.request.user.pk, project_id=4)
+
 
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -241,6 +245,7 @@ class CommentsDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class CommentsGetDetailView(generics.RetrieveAPIView):
     """get le commentaire en fonction de l'id.Tout les contributeurs du projet y on accés"""
+
     serializer_class = CommentsSerializer
     permission_classes = [IsAuthenticated]
 
