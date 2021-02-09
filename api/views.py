@@ -1,8 +1,7 @@
 from django.http import Http404
-from django.db import transaction
 
 from django.contrib.auth.models import User
-from api.models import Project, Issue, Comments, Contributeur
+from api.models import Project, Issue, Comments
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -51,12 +50,7 @@ class ProjectListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         """override le save de l'objet en bdd"""
-
-        with transaction.atomic():
-            serializer.save(author=self.request.user)
-            # project = Project.objects.get(author=self.request.user)
-            #contributeur= Contributeur.objects.create(user_id=self.request.user.pk, project_id=4)
-
+        serializer.save(author=self.request.user)
 
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -116,8 +110,8 @@ class AddContributor(APIView):
         return Response(project.contributor.add(self.request.user))
 
 
-class ContributorDetailView(generics.RetrieveDestroyAPIView):
-    """ Permet de se récuperer ou de se supprimer.Aucun autre utilisateur ne peut le faire"""
+class ContributorDetailView(generics.DestroyAPIView):
+    """ Permet de se supprimer d'un projet.Aucun autre utilisateur ne peut le faire"""
 
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, IsContributor]
@@ -127,9 +121,10 @@ class ContributorDetailView(generics.RetrieveDestroyAPIView):
 
         id_project = self.kwargs.get('id_project')
         try:
-            return User.objects.filter(project__id=id_project)
-        except User.DoesNotExist:
+            project = Project.objects.get(pk=id_project)
+        except Project.DoesNotExist:
             raise Http404
+        return project.contributor.remove(self.request.user)
 
 
 class IssueListCreateView(generics.ListCreateAPIView):

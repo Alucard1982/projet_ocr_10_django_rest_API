@@ -1,7 +1,6 @@
-
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from api.models import Project, Issue, Comments
+from api.models import Project, Issue, Comments, Contributeur
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -10,6 +9,14 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'username', 'email')
+
+
+"""class ContributeurSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Contributeur
+        fields = ('user', 'role')"""
 
 
 class CommentsSerializer(serializers.ModelSerializer):
@@ -39,20 +46,14 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     issues = IssueSerializer(many=True, read_only=True)
     comments = CommentsSerializer(many=True, read_only=True)
-    contributor = UserSerializer
+    contributor = UserSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
 
-    """def create(self, validated_data):
-        profile_data = validated_data.pop('contributor')
+    def create(self, validated_data):
         project = Project.objects.create(**validated_data)
-        User.objects.create(project=project, **profile_data)
-        return project"""
-
-    """def create(self, validated_data):
-        project_data = validated_data.pop('contributor')
-        project = Project.objects.create(**validated_data)
-        validated_data['project'] = project
-        return super().create(self, validated_data)"""
+        user = validated_data['author']
+        project.contributor.add(user)
+        return project
 
     class Meta:
         model = Project
