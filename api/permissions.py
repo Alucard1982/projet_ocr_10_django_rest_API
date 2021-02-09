@@ -17,7 +17,7 @@ class IsContributor(permissions.BasePermission):
     """Permet d'acceder à la donner que si c'est l'utilisateur courant """
 
     def has_object_permission(self, request, view, obj):
-        return request.user.username == obj.username
+        return request.user == obj.user
 
 
 class IsIssue(permissions.BasePermission):

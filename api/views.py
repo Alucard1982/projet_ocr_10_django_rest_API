@@ -1,7 +1,7 @@
 from django.http import Http404
 
 from django.contrib.auth.models import User
-from api.models import Project, Issue, Comments
+from api.models import Project, Issue, Comments, Contributeur
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -10,7 +10,7 @@ from rest_framework import generics
 
 from api.permissions import IsAuthor, IsContributor, IsComments, IsIssue
 
-from .serializers import UserSerializer, ProjectSerializer, IssueSerializer, CommentsSerializer
+from .serializers import UserSerializer, ProjectSerializer, IssueSerializer, CommentsSerializer, ContributeurSerializer
 
 
 class UserProfileListCreateView(generics.ListAPIView):
@@ -28,7 +28,7 @@ class UserProfileDetailView(generics.RetrieveAPIView):
     """ permet de récuperer un user en fonction de l'id """
 
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated, IsContributor]
+    permission_classes = [IsAuthenticated]
     try:
         queryset = User.objects.all()
     except User.DoesNotExist:
@@ -82,7 +82,7 @@ class ProjectRetrieveDetailView(generics.RetrieveAPIView):
 class ContributorListView(generics.ListAPIView):
     """get les  contributeurs d'un  projets """
 
-    serializer_class = UserSerializer
+    serializer_class = ContributeurSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self, *args, **kwargs):
@@ -90,30 +90,32 @@ class ContributorListView(generics.ListAPIView):
 
         id_project = self.kwargs.get('id_project')
         try:
-            return User.objects.filter(project__id=id_project)
-        except User.DoesNotExist:
+            return Contributeur.objects.filter(project__id=id_project)
+        except Contributeur.DoesNotExist:
             raise Http404
 
 
-class AddContributor(APIView):
-    """ permet de s'ajouter en tant que contributeur à un project qui existe"""
+class ContributorCreateDetailView(generics.CreateAPIView):
+    """ permet de d'ajouter un  contributeur à un project qui existe"""
 
     permission_classes = [IsAuthenticated]
-    serializer_class = UserSerializer
+    serializer_class = ContributeurSerializer
 
-    def post(self, *args, **kwargs, ):
+    def perform_create(self, serializer, *args, **kwargs):
+        """override le save de l'objet en bdd"""
+
         id_project = self.kwargs.get('id_project')
         try:
-            project = Project.objects.get(pk=id_project)
+            projects = Project.objects.get(pk=id_project)
         except Project.DoesNotExist:
             raise Http404
-        return Response(project.contributor.add(self.request.user))
+        serializer.save(project=projects, user=self.request.user)
 
 
-class ContributorDetailView(generics.DestroyAPIView):
+class ContributorDetailView(generics.RetrieveDestroyAPIView):
     """ Permet de se supprimer d'un projet.Aucun autre utilisateur ne peut le faire"""
 
-    serializer_class = UserSerializer
+    serializer_class = ContributeurSerializer
     permission_classes = [IsAuthenticated, IsContributor]
 
     def get_queryset(self, *args, **kwargs):
@@ -121,10 +123,9 @@ class ContributorDetailView(generics.DestroyAPIView):
 
         id_project = self.kwargs.get('id_project')
         try:
-            project = Project.objects.get(pk=id_project)
-        except Project.DoesNotExist:
+            return Contributeur.objects.filter(project__id=id_project)
+        except Contributeur.DoesNotExist:
             raise Http404
-        return project.contributor.remove(self.request.user)
 
 
 class IssueListCreateView(generics.ListCreateAPIView):

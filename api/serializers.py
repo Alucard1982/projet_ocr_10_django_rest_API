@@ -11,12 +11,12 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', 'username', 'email')
 
 
-"""class ContributeurSerializer(serializers.ModelSerializer):
+class ContributeurSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = Contributeur
-        fields = ('user', 'role')"""
+        fields = ('id', 'user', 'role')
 
 
 class CommentsSerializer(serializers.ModelSerializer):
@@ -38,7 +38,8 @@ class IssueSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Issue
-        fields = ('id', 'description', 'priority', 'status', 'author', 'user_assigner', 'comments')
+        fields = ('id', 'title', 'description', 'tag', 'priority', 'status',"created_time",
+                  'author', 'user_assigner', 'comments')
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -51,8 +52,11 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         project = Project.objects.create(**validated_data)
-        user = validated_data['author']
-        project.contributor.add(user)
+        contributeur = Contributeur.objects.create(project=project, user=validated_data['author'], role='master')
+        try:
+            project.contributor.add(contributeur)
+        except TypeError:
+            pass
         return project
 
     class Meta:

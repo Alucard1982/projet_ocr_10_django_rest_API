@@ -11,7 +11,7 @@ urlpatterns = [
 
     path('project/<int:id_project>/users/', views.ContributorListView.as_view()),
     path('project/<int:id_project>/users/<int:pk>', views.ContributorDetailView.as_view()),
-    path('project/<int:id_project>/add_users/', views.AddContributor.as_view()),
+    path('project/<int:id_project>/add_users/', views.ContributorCreateDetailView.as_view()),
 
     path('project/<int:id_project>/issue/', views.IssueListCreateView.as_view()),
     path('project/<int:id_project>/issue/<int:pk>', views.IssueDetailView.as_view()),
